@@ -47,13 +47,20 @@ const tabs = [
   "Methodology"
 ];
 
-const fmt = (n: number | null | undefined, suffix = " MW") =>
+const fmt = (
+  n: number | null | undefined,
+  suffix = " MW"
+) =>
   n == null
     ? "—"
-    : n.toLocaleString("en-GB", { maximumFractionDigits: 1 }) + suffix;
+    : n.toLocaleString("en-GB", {
+        maximumFractionDigits: 1
+      }) + suffix;
 
 const avg = (values: (number | null)[]) => {
-  const valid = values.filter((x): x is number => x !== null);
+  const valid = values.filter(
+    (x): x is number => x !== null
+  );
   return valid.length
     ? valid.reduce((a, b) => a + b, 0) / valid.length
     : null;
@@ -65,207 +72,6 @@ const tm = (s: string) =>
     hour: "2-digit",
     minute: "2-digit"
   });
-
-function Section({ title, desc }: { title: string; desc: string }) {
-  return (
-    <div className="section">
-      <div>
-        <h2>{title}</h2>
-        <p>{desc}</p>
-      </div>
-      <span className="tag">Historical intervals</span>
-    </div>
-  );
-}
-
-function Metric({
-  label, value, detail
-}: {
-  label: string;
-  value: string;
-  detail: string;
-}) {
-  return (
-    <div className="metric">
-      <div>
-        {label}
-        <span>↗</span>
-      </div>
-      <strong>{value}</strong>
-      <small>{detail}</small>
-    </div>
-  );
-}
-
-function GenerationChart({
-  rows
-}: {
-  rows: (P & { label: string })[];
-}) {
-  return (
-    <div className="panel chartpanel">
-      <div className="panelhead">
-        <div>
-          <h3>Wind generation: forecast vs actual</h3>
-          <p>
-            National wind generation across the selected delivery day
-          </p>
-        </div>
-        <span className="tag">MW</span>
-      </div>
-
-      <div className="chart">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={rows}>
-            <CartesianGrid stroke="#e8edf0" vertical={false} />
-
-            <XAxis
-              dataKey="label"
-              interval={7}
-              tickLine={false}
-              axisLine={false}
-              tick={{ fontSize: 11, fill: "#8895a4" }}
-            />
-
-            <YAxis
-              tickLine={false}
-              axisLine={false}
-              tick={{ fontSize: 11, fill: "#8895a4" }}
-              width={56}
-            />
-
-            <Tooltip
-              formatter={(value: number) => fmt(value)}
-            />
-
-            <Legend
-              verticalAlign="top"
-              align="right"
-              iconType="circle"
-              iconSize={8}
-              wrapperStyle={{
-                fontSize: 12,
-                paddingBottom: 18
-              }}
-            />
-
-            <Line
-              name="Forecast"
-              dataKey="forecast"
-              stroke="#0d8b86"
-              strokeWidth={2.5}
-              strokeDasharray="7 4"
-              dot={{ r: 2.5 }}
-              activeDot={{ r: 6 }}
-              connectNulls={true}
-              isAnimationActive={false}
-            />
-
-            <Line
-              name="Actual"
-              dataKey="actual"
-              stroke="#24384f"
-              strokeWidth={2.5}
-              dot={false}
-              activeDot={{ r: 5 }}
-              connectNulls={false}
-              isAnimationActive={false}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-
-      <p style={{ fontSize: 11, color: "#8895a4" }}>
-        Hourly forecast observations are connected visually.
-        Missing half-hour values are not estimated.
-      </p>
-    </div>
-  );
-}
-
-function Methodology() {
-  return (
-    <div className="method">
-      <div className="panel feature">
-        <span className="featureicon">
-          <BookOpen size={24} />
-        </span>
-        <h2>Transparent by design.</h2>
-        <p>
-          WindScope compares forecasts available at a historical
-          decision time against actual generation. Accuracy
-          metrics use matching observations only.
-        </p>
-      </div>
-
-      <div className="panel">
-        <h3>01 / Official data sources</h3>
-        <p>
-          Actuals:{" "}
-          <a
-            href="https://bmrs.elexon.co.uk/api-documentation/endpoint/datasets/FUELHH/stream"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Elexon FUELHH ↗
-          </a>
-          , filtered to fuelType WIND.
-        </p>
-        <p>
-          Forecasts:{" "}
-          <a
-            href="https://bmrs.elexon.co.uk/api-documentation/endpoint/datasets/WINDFOR/stream"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Elexon WINDFOR ↗
-          </a>
-          , using startTime, publishTime, and generation.
-        </p>
-      </div>
-
-      <div className="panel">
-        <h3>02 / Historical forecast selection</h3>
-        <p>
-          For each delivery interval, the latest forecast
-          published at or before the decision cutoff is
-          selected. Later revisions are excluded to prevent
-          look-ahead bias.
-        </p>
-        <p>
-          The default 12:00 UTC cutoff is an adjustable
-          analytical assumption, not an official market deadline.
-        </p>
-      </div>
-
-      <div className="panel">
-        <h3>03 / Accuracy definitions</h3>
-        <p><b>MAE</b> = mean(|forecast − actual|)</p>
-        <p><b>RMSE</b> = √mean((forecast − actual)²)</p>
-        <p><b>Bias</b> = mean(forecast − actual)</p>
-        <p>Positive bias indicates overforecasting.</p>
-      </div>
-
-      <div className="panel">
-        <h3>04 / Scope and limitations</h3>
-        <p>
-          January 2026 decision dates and next-day national
-          wind generation are analyzed. A January 31 decision
-          includes February 1 delivery.
-        </p>
-        <p>
-          Actuals have 30-minute resolution, while the observed
-          forecast series has hourly timestamps. Missing
-          forecast values are not fabricated.
-        </p>
-        <p>
-          Data is processed in UTC and displayed in UK local
-          time where indicated. Demand and prices are excluded.
-        </p>
-      </div>
-    </div>
-  );
-}
 
 function App() {
   const [tab, setTab] = useState(0);
@@ -288,7 +94,9 @@ function App() {
       .then(async (response) => {
         const result = await response.json();
         if (!response.ok) {
-          throw Error(result.detail || "Elexon API request failed");
+          throw Error(
+            result.detail || "Elexon API request failed"
+          );
         }
         return result;
       })
@@ -316,7 +124,7 @@ function App() {
   function exportCSV() {
     if (!data) return;
 
-    const text = [
+    const csv = [
       "startTime,forecastMW,actualMW,errorMW,publishTime,leadHours",
       ...data.points.map((p) =>
         [
@@ -331,7 +139,7 @@ function App() {
     ].join("\n");
 
     const url = URL.createObjectURL(
-      new Blob([text], { type: "text/csv" })
+      new Blob([csv], { type: "text/csv" })
     );
 
     const anchor = document.createElement("a");
@@ -355,7 +163,6 @@ function App() {
           <button
             className="menubtn"
             onClick={() => setMenu(false)}
-            aria-label="Close navigation"
           >
             <X size={18} />
           </button>
@@ -365,7 +172,10 @@ function App() {
 
         <nav>
           {tabs.map((title, i) => {
-            const Icon = [Activity, Wind, BarChart3, BookOpen][i];
+            const Icon = [
+              Activity, Wind, BarChart3, BookOpen
+            ][i];
+
             return (
               <button
                 key={title}
@@ -399,15 +209,18 @@ function App() {
           <button
             className="menubtn"
             onClick={() => setMenu(true)}
-            aria-label="Open navigation"
           >
             <Menu size={21} />
           </button>
+
           <div>
             Workspace <span>/</span> <b>{tabs[tab]}</b>
           </div>
+
           <div className="topright">
-            <span><Clock size={14} /> Europe/London</span>
+            <span>
+              <Clock size={14} /> Europe/London
+            </span>
             <span className="pill">Historical dataset</span>
             <b className="avatar">WS</b>
           </div>
@@ -419,6 +232,7 @@ function App() {
               <div className="eyebrow">
                 ● &nbsp; UK WIND GENERATION · JANUARY 2026
               </div>
+
               <h1>
                 {[
                   "Wind forecast overview",
@@ -427,6 +241,7 @@ function App() {
                   "Methodology & data"
                 ][tab]}
               </h1>
+
               <p>
                 {[
                   "A clearer view of wind supply, forecast reliability, and day-ahead decisions.",
@@ -437,19 +252,22 @@ function App() {
               </p>
             </div>
 
-            {tab !== 3 && (
-              <button
-                className="btn"
-                onClick={() => setRetry((x) => x + 1)}
-              >
-                <RefreshCw size={16} /> Refresh data
-              </button>
-            )}
+            <button
+              className="btn"
+              onClick={() => setRetry((x) => x + 1)}
+            >
+              <RefreshCw size={16} />
+              Refresh data
+            </button>
           </div>
 
           {tab !== 3 && (
             <div className="filters">
-              <label><Calendar size={17} /> Decision date</label>
+              <label>
+                <Calendar size={17} />
+                Decision date
+              </label>
+
               <input
                 type="date"
                 min="2026-01-01"
@@ -457,20 +275,33 @@ function App() {
                 value={day}
                 onChange={(e) => setDay(e.target.value)}
               />
+
               <i />
-              <label><Clock size={17} /> Decision cutoff</label>
+
+              <label>
+                <Clock size={17} />
+                Decision cutoff
+              </label>
+
               <select
                 value={hour}
-                onChange={(e) => setHour(+e.target.value)}
+                onChange={(e) =>
+                  setHour(+e.target.value)
+                }
               >
-                {Array.from({ length: 24 }, (_, i) => (
-                  <option value={i} key={i}>
-                    {String(i).padStart(2, "0")}:00 UTC
-                  </option>
-                ))}
+                {Array.from(
+                  { length: 24 },
+                  (_, i) => (
+                    <option value={i} key={i}>
+                      {String(i).padStart(2, "0")}:00 UTC
+                    </option>
+                  )
+                )}
               </select>
+
               <div className="filterhint">
-                ⓘ &nbsp; Scenario cutoff, not an official market deadline
+                ⓘ &nbsp; Scenario cutoff, not an
+                official market deadline
               </div>
             </div>
           )}
@@ -482,7 +313,8 @@ function App() {
               {loading && (
                 <div className="notice">
                   <span className="spinner" />
-                  Fetching real historical wind generation from Elexon…
+                  Fetching real historical wind generation
+                  from Elexon…
                 </div>
               )}
 
@@ -492,11 +324,16 @@ function App() {
                   <div>
                     <b>Unable to load Elexon data</b>
                     <p>{error}</p>
-                    <p>No invented values are displayed.</p>
+                    <p>
+                      No invented values are displayed.
+                      Check the Elexon API or retry.
+                    </p>
                   </div>
                   <button
                     className="btn"
-                    onClick={() => setRetry((x) => x + 1)}
+                    onClick={() =>
+                      setRetry((x) => x + 1)
+                    }
                   >
                     Retry
                   </button>
@@ -515,23 +352,36 @@ function App() {
                       <div className="metrics">
                         <Metric
                           label="Mean forecast generation"
-                          value={fmt(avg(data.points.map(p => p.forecast)))}
+                          value={fmt(
+                            avg(
+                              data.points.map(
+                                (p) => p.forecast
+                              )
+                            )
+                          )}
                           detail="Available at decision cutoff"
                         />
+
                         <Metric
                           label="Mean actual generation"
-                          value={fmt(avg(
-                            data.points
-                              .filter(p => p.forecast !== null)
-                              .map(p => p.actual)
-                          ))}
+                          value={fmt(
+                            avg(
+                              data.points
+                                .filter(
+                                  (p) => p.forecast !== null
+                                )
+                                .map((p) => p.actual)
+                            )
+                          )}
                           detail="At forecast-matched intervals"
                         />
+
                         <Metric
                           label="Mean absolute error"
                           value={fmt(data.metrics.mae)}
                           detail={`${data.metrics.count} matched intervals`}
                         />
+
                         <Metric
                           label="Forecast bias"
                           value={fmt(data.metrics.bias)}
@@ -544,34 +394,43 @@ function App() {
                       <div className="twocol">
                         <div className="panel">
                           <h3>Data coverage</h3>
+
                           {([
                             ["Forecast intervals", data.coverage.forecast],
                             ["Actual intervals", data.coverage.actual],
                             ["Matched intervals", data.coverage.matched]
-                          ] as [string, number][]).map(([label, count]) => (
-                            <div className="coverage" key={label}>
-                              <div>
-                                <span>{label}</span>
-                                <b>{count} / {data.coverage.expected}</b>
+                          ] as [string, number][]).map(
+                            ([label, count]) => (
+                              <div
+                                className="coverage"
+                                key={label}
+                              >
+                                <div>
+                                  <span>{label}</span>
+                                  <b>{count} / 48</b>
+                                </div>
+                                <div className="track">
+                                  <span
+                                    style={{
+                                      width: `${count / 48 * 100}%`
+                                    }}
+                                  />
+                                </div>
                               </div>
-                              <div className="track">
-                                <span
-                                  style={{
-                                    width: `${count / data.coverage.expected * 100}%`
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          ))}
+                            )
+                          )}
                         </div>
 
                         <div className="panel">
                           <h3>Decision context</h3>
                           <p className="bodytext">
                             Only forecasts published by{" "}
-                            <b>{String(hour).padStart(2, "0")}:00 UTC</b>{" "}
-                            on {day} are eligible. Later revisions are
-                            excluded to avoid look-ahead bias.
+                            <b>
+                              {String(hour).padStart(2, "0")}
+                              :00 UTC
+                            </b>{" "}
+                            on {day} are eligible. Later revisions
+                            are excluded to avoid look-ahead bias.
                           </p>
                           <div className="callout">
                             ✓ &nbsp; Point-in-time forecast selection
@@ -591,13 +450,18 @@ function App() {
                       <div className="metrics two">
                         <Metric
                           label="Eligible forecast intervals"
-                          value={`${data.coverage.forecast} / ${data.coverage.expected}`}
+                          value={`${data.coverage.forecast} / 48`}
                           detail="Published before cutoff"
                         />
+
                         <Metric
                           label="Average lead time"
                           value={fmt(
-                            avg(data.points.map(p => p.leadHours)),
+                            avg(
+                              data.points.map(
+                                (p) => p.leadHours
+                              )
+                            ),
                             " hours"
                           )}
                           detail="From forecast issue to delivery"
@@ -608,4 +472,224 @@ function App() {
 
                       <div className="panel">
                         <div className="panelhead">
-                          <h
+                          <h3>Interval detail</h3>
+                          <button
+                            className="btn"
+                            onClick={exportCSV}
+                          >
+                            <Download size={16} />
+                            Export CSV
+                          </button>
+                        </div>
+
+                        <div className="tablewrap">
+                          <table>
+                            <thead>
+                              <tr>
+                                {[
+                                  "Delivery time (UTC)",
+                                  "Forecast",
+                                  "Actual",
+                                  "Error",
+                                  "Published (UTC)",
+                                  "Lead time"
+                                ].map((s) => (
+                                  <th key={s}>{s}</th>
+                                ))}
+                              </tr>
+                            </thead>
+
+                            <tbody>
+                              {data.points.map((p) => (
+                                <tr key={p.time}>
+                                  <td>
+                                    {p.time
+                                      .replace("T", " ")
+                                      .replace("Z", "")}
+                                  </td>
+                                  <td>{fmt(p.forecast)}</td>
+                                  <td>{fmt(p.actual)}</td>
+                                  <td>{fmt(p.error)}</td>
+                                  <td>
+                                    {p.publishTime
+                                      ?.replace("T", " ")
+                                      .replace("Z", "") ||
+                                      "Unavailable"}
+                                  </td>
+                                  <td>
+                                    {fmt(p.leadHours, " h")}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {tab === 2 && (
+                    <>
+                      <Section
+                        title="Historical error metrics"
+                        desc={`${data.metrics.count} matched forecast observations`}
+                      />
+
+                      <div className="metrics three">
+                        <Metric
+                          label="Mean absolute error"
+                          value={fmt(data.metrics.mae)}
+                          detail="Average absolute miss"
+                        />
+
+                        <Metric
+                          label="Root mean squared error"
+                          value={fmt(data.metrics.rmse)}
+                          detail="Penalizes larger misses"
+                        />
+
+                        <Metric
+                          label="Forecast bias"
+                          value={fmt(data.metrics.bias)}
+                          detail={
+                            data.metrics.bias == null
+                              ? "Insufficient data"
+                              : data.metrics.bias > 0
+                              ? "Tends to overforecast"
+                              : "Tends to underforecast"
+                          }
+                        />
+                      </div>
+
+                      <div className="panel chartpanel">
+                        <div className="panelhead">
+                          <div>
+                            <h3>Signed forecast error</h3>
+                            <p>
+                              Positive indicates overforecasting;
+                              negative indicates underforecasting.
+                            </p>
+                          </div>
+                          <span className="tag">MW</span>
+                        </div>
+
+                        <div className="chart">
+                          <ResponsiveContainer>
+                            <AreaChart data={rows}>
+                              <CartesianGrid
+                                stroke="#e8edf0"
+                                vertical={false}
+                              />
+                              <XAxis
+                                dataKey="label"
+                                interval={7}
+                                tickLine={false}
+                                axisLine={false}
+                                tick={{
+                                  fontSize: 11,
+                                  fill: "#8895a4"
+                                }}
+                              />
+                              <YAxis
+                                tickLine={false}
+                                axisLine={false}
+                                tick={{
+                                  fontSize: 11,
+                                  fill: "#8895a4"
+                                }}
+                              />
+                              <Tooltip />
+                              <ReferenceLine
+                                y={0}
+                                stroke="#9ba7b3"
+                                strokeDasharray="4 4"
+                              />
+                              <Area
+                                dataKey="error"
+                                name="Forecast error (MW)"
+                                stroke="#c18d4c"
+                                fill="#f4e8d6"
+                                strokeWidth={2}
+                                connectNulls={true}
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+
+                      <div className="panel">
+                        <h3>How to interpret these metrics</h3>
+                        <div className="explainer">
+                          <p>
+                            <b>MAE</b>
+                            <br />
+                            Typical absolute forecast miss, in MW.
+                          </p>
+                          <p>
+                            <b>RMSE</b>
+                            <br />
+                            Emphasizes large forecast misses.
+                          </p>
+                          <p>
+                            <b>Bias</b>
+                            <br />
+                            Forecast minus actual; positive means
+                            overforecasting.
+                          </p>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+            </>
+          )}
+        </main>
+
+        <footer>
+          WindScope · A historical analysis pilot
+          <span>
+            Data: Elexon BMRS · UK time unless stated
+          </span>
+        </footer>
+      </div>
+
+      {menu && (
+        <div
+          className="overlay"
+          onClick={() => setMenu(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function Section({
+  title,
+  desc
+}: {
+  title: string;
+  desc: string;
+}) {
+  return (
+    <div className="section">
+      <div>
+        <h2>{title}</h2>
+        <p>{desc}</p>
+      </div>
+      <span className="tag">30-minute intervals</span>
+    </div>
+  );
+}
+
+function Metric({
+  label,
+  value,
+  detail
+}: {
+  label: string;
+  value: string;
+  detail: string;
+}) {
+  return (
+    <div className="metric
