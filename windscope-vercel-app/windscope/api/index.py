@@ -108,3 +108,30 @@ async def analysis(day:str=Query('2026-01-15'),cutoff_hour:int=Query(12,ge=0,le=
     pairs=[p for p in points if p['forecast'] is not None and p['actual'] is not None]
     stats=calculate(pairs)
     return {'decisionDate':day,'cutoff':iso(cutoff),'deliveryDate':delivery_start.date().isoformat(),'points':points,'metrics':stats,'coverage':{'forecast':sum(p['forecast'] is not None for p in points),'actual':sum(p['actual'] is not None for p in points),'matched':len(pairs),'expected':48},'source':'Elexon FUELHH + WINDFOR','method':'Latest eligible forecast published at or before decision cutoff; cutoff is a scenario assumption, not a market deadline.'}
+@app.get("/api/debug-elexon")
+async def debug_elexon():
+    async with httpx.AsyncClient(timeout=25) as client:
+        output = {}
+
+        for dataset in ["FUELHH", "WINDFOR"]:
+            try:
+                response = await client.get(
+                    f"{BASE}/{dataset}/stream",
+                    params={
+                        "from": "2026-01-16T00:00:00Z",
+                        "to": "2026-01-16T02:00:00Z"
+                    }
+                )
+
+                data = response.json()
+
+                output[dataset] = {
+                    "status": response.status_code,
+                    "count": len(data) if isinstance(data, list) else None,
+                    "sample": data[:2] if isinstance(data, list) else data
+                }
+
+            except Exception as exc:
+                output[dataset] = {"error": str(exc)}
+
+        return output
