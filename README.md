@@ -1,197 +1,325 @@
-[Uploading README (1).md…]()
-# WindScope
+# WindScope — Wind Generation Forecast Intelligence
 
-**Historical UK wind generation forecast intelligence for day-ahead electricity procurement.**
+**A full-stack analytics application for evaluating historical wind generation forecasts and supporting day-ahead electricity procurement decisions in the UK.**
 
-WindScope is a React and Python application that compares forecasts available at a selected historical decision cutoff with subsequently observed wind generation. It uses official Elexon BMRS datasets and focuses on decisions made in **January 2026**.
+**Live Application:** https://windscope-o17u7fdo8-anish-kinkars-projects.vercel.app/
 
-**Deployed application:** https://windscope-o17u7fdo8-anish-kinkars-projects.vercel.app/  
-**Source repository:** https://github.com/anish-kinkar/wind-7k30m
+**GitHub Repository:** https://github.com/anish-kinkar/wind-7k30m
 
-> **Access note:** Verify that the deployed URL is publicly accessible in an incognito browser window before submission. If Vercel requests authentication, adjust the project's Deployment Protection settings or use a publicly accessible production URL.
+## 1. Project Overview
 
-## Features
+WindScope is a web-based analytical platform designed for electricity procurement teams that rely on renewable generation forecasts when making day-ahead purchasing decisions.
 
-- **Overview:** Wind generation forecasts versus actual generation, key accuracy metrics, and data coverage.
-- **Forecast Explorer:** Historical decision-date and cutoff selection, forecast publication timestamps, lead times, and CSV export.
-- **Accuracy Analysis:** Mean Absolute Error (MAE), Root Mean Squared Error (RMSE), and forecast bias.
-- **Methodology:** Data sources, historical forecast selection, and analytical limitations.
+Wind generation is weather-dependent, and differences between forecasted and actual generation introduce uncertainty into procurement planning.
 
-## Technology stack
+The application retrieves historical UK wind generation data from Elexon BMRS, compares forecasts against actual generation, and calculates quantitative accuracy metrics to help users understand forecast reliability.
+
+The analysis focuses on purchasing decisions made during January 2026.
+
+## 2. Key Features
+
+- **Wind Generation Overview:** Visualizes forecasted and actual national wind generation using interactive time-series charts.
+- **Forecast Explorer:** Allows users to inspect historical forecast values, publication timestamps, and forecast lead times.
+- **Forecast Accuracy Analysis:** Calculates Mean Absolute Error (MAE), Root Mean Squared Error (RMSE), and forecast bias.
+- **Historical Decision Simulation:** Selects forecasts available before a configurable historical decision cutoff, avoiding look-ahead bias.
+- **Data Coverage Monitoring:** Displays the availability of actual, forecast, and matched observations.
+- **CSV Export:** Enables downloading interval-level analysis results.
+- **Methodology Documentation:** Explains data sources, forecast selection logic, analytical assumptions, and limitations.
+
+## 3. Technology Stack
 
 | Layer | Technology |
-| --- | --- |
+|---|---|
 | Frontend | React, TypeScript, Vite |
+| UI Styling | CSS |
 | Charts | Recharts |
 | Icons | Lucide React |
-| Backend | Python, FastAPI, HTTPX |
-| Local containers | Docker, Docker Compose |
+| Backend | Python, FastAPI |
+| HTTP Client | HTTPX |
+| Data Validation | Pydantic |
+| Containerization | Docker |
 | Deployment | Vercel |
-| Data | Elexon BMRS |
+| Data Source | Elexon BMRS API |
 
-## Repository structure
+## 4. Project Structure
 
-The following paths are relative to the application root (the directory containing `package.json` and `requirements.txt`).
+The application is organized into frontend, backend, configuration, and testing components.
 
 ```text
-.
+windscope/
 ├── api/
-│   ├── __init__.py          # Python package marker
-│   └── index.py             # FastAPI routes, Elexon retrieval and analysis
+│   └── index.py
 ├── src/
-│   ├── main.tsx             # React interface, charts, filters and CSV export
-│   └── style.css            # Application styling
+│   ├── main.tsx
+│   └── style.css
+├── public/
 ├── tests/
-│   └── test_analysis.py     # Backend analysis tests
-├── index.html               # Vite HTML entry point
-├── package.json             # Frontend dependencies and scripts
-├── requirements.txt         # Python dependencies
-├── tsconfig.json            # TypeScript configuration
-├── vite.config.ts           # Vite configuration and local API proxy
-├── vercel.json              # Vercel build and route configuration
-├── Dockerfile               # Backend container image
-├── docker-compose.yml       # Frontend and backend local services
-├── .gitignore               # Ignored development artifacts
-└── README.md                # Project documentation
+├── index.html
+├── package.json
+├── requirements.txt
+├── tsconfig.json
+├── vite.config.ts
+├── vercel.json
+├── Dockerfile
+├── docker-compose.yml
+└── README.md
 ```
 
-## How to run locally
+### Directory and File Descriptions
+
+| File / Directory | Description |
+|---|---|
+| `api/index.py` | FastAPI backend, Elexon data retrieval, historical forecast selection, and accuracy calculations |
+| `src/main.tsx` | React application, navigation, dashboard components, charts, filters, and CSV export |
+| `src/style.css` | Application styling, layouts, typography, and responsive design |
+| `public/` | Static frontend assets |
+| `tests/` | Backend test files |
+| `index.html` | HTML entry point |
+| `package.json` | Frontend dependencies and npm scripts |
+| `requirements.txt` | Python backend dependencies |
+| `tsconfig.json` | TypeScript configuration |
+| `vite.config.ts` | Vite development and build configuration |
+| `vercel.json` | Vercel deployment and routing configuration |
+| `Dockerfile` | Docker image configuration |
+| `docker-compose.yml` | Local container orchestration |
+| `README.md` | Project documentation |
+
+## 5. Data Sources
+
+WindScope uses official Elexon Balancing Mechanism Reporting Service (BMRS) datasets.
+
+### Actual Wind Generation — FUELHH
+
+Documentation:
+
+https://bmrs.elexon.co.uk/api-documentation/endpoint/datasets/FUELHH/stream
+
+The application filters records where `fuelType = WIND`.
+
+Relevant fields:
+
+- `startTime`: Generation interval timestamp.
+- `generation`: Actual wind generation in MW.
+
+Actual generation is available at 30-minute resolution.
+
+### Forecast Wind Generation — WINDFOR
+
+Documentation:
+
+https://bmrs.elexon.co.uk/api-documentation/endpoint/datasets/WINDFOR/stream
+
+Relevant fields:
+
+- `startTime`: Target generation timestamp.
+- `publishTime`: Forecast publication timestamp.
+- `generation`: Forecasted wind generation in MW.
+
+Historical records are retrieved through the Python backend.
+
+## 6. Forecast Selection Methodology
+
+For each delivery interval, WindScope identifies forecasts published at or before the selected historical decision cutoff.
+
+When multiple eligible forecasts exist, the application selects the most recently published forecast.
+
+This ensures that forecast accuracy is evaluated using information available at the time of the simulated procurement decision.
+
+Forecasts published after the cutoff are excluded to prevent look-ahead bias.
+
+The default decision cutoff is 12:00 UTC. This is a configurable analytical assumption, not an asserted official market deadline.
+
+## 7. Forecast Accuracy Metrics
+
+Forecast accuracy is evaluated using matching forecast and actual generation observations.
+
+**Mean Absolute Error (MAE)**
+
+```text
+MAE = mean(|Forecast - Actual|)
+```
+
+Measures the average absolute forecasting error in MW.
+
+**Root Mean Squared Error (RMSE)**
+
+```text
+RMSE = sqrt(mean((Forecast - Actual)^2))
+```
+
+Places greater emphasis on larger forecasting errors.
+
+**Forecast Bias**
+
+```text
+Bias = mean(Forecast - Actual)
+```
+
+Positive bias indicates overforecasting, while negative bias indicates underforecasting.
+
+Missing observations are excluded from accuracy calculations rather than replaced with artificial values.
+
+## 8. Running the Application Locally
 
 ### Prerequisites
 
-- Node.js and npm
-- Python 3 and pip
-- Git
+Install the following:
 
-### 1. Clone the repository
+- Node.js and npm
+- Python 3
+- Git
+- Docker (optional)
+
+### Clone the Repository
 
 ```bash
 git clone https://github.com/anish-kinkar/wind-7k30m.git
-cd wind-7k30m
+cd wind-7k30m/windscope-vercel-app/windscope
 ```
 
-If the application files are inside a subfolder, navigate to the folder containing `package.json` and `requirements.txt` before continuing.
+### Install Frontend Dependencies
 
-### 2. Install Python dependencies
+```bash
+npm install
+```
+
+### Install Backend Dependencies
+
+Create a Python virtual environment:
 
 ```bash
 python -m venv .venv
 ```
 
-Activate the environment:
-
-**macOS / Linux:**
+Activate it on macOS or Linux:
 
 ```bash
 source .venv/bin/activate
 ```
 
-**Windows PowerShell:**
+On Windows:
 
 ```powershell
 .venv\Scripts\Activate.ps1
 ```
 
-Then install:
+Install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Start the Python backend
+### Start the Backend
 
 ```bash
-uvicorn api.index:app --reload --host 127.0.0.1 --port 8000
+uvicorn api.index:app --reload --port 8000
 ```
 
-Backend health endpoint: http://localhost:8000/api/health
+The backend will be available at:
 
-### 4. Start the React frontend
+```text
+http://localhost:8000
+```
 
-Open a second terminal in the application root:
+API health check:
+
+```text
+http://localhost:8000/api/health
+```
+
+### Start the Frontend
+
+Open another terminal and run:
 
 ```bash
-npm install
 npm run dev
 ```
 
-Open http://localhost:5173 in your browser. Vite proxies `/api` requests to the local Python backend.
+The frontend runs on the local address displayed by Vite, typically:
 
-## Run with Docker
+```text
+http://localhost:5173
+```
 
-With Docker installed, start both services from the application root:
+For local development, configure Vite to proxy `/api` requests to `http://localhost:8000` if this is not already configured.
+
+## 9. Docker
+
+The repository includes Docker configuration for containerized local development.
+
+To start the configured services:
 
 ```bash
 docker compose up --build
 ```
 
-Open http://localhost:5173. To stop the services:
+To stop them:
 
 ```bash
 docker compose down
 ```
 
-## Data sources and analysis
+The exposed ports and service configuration are defined in `docker-compose.yml`.
 
-WindScope uses only the following Elexon BMRS datasets:
+## 10. Deployment
 
-| Dataset | Purpose | Relevant fields |
-| --- | --- | --- |
-| [FUELHH](https://bmrs.elexon.co.uk/api-documentation/endpoint/datasets/FUELHH/stream) | Actual generation, filtered to `fuelType = WIND` | `startTime`, `generation` |
-| [WINDFOR](https://bmrs.elexon.co.uk/api-documentation/endpoint/datasets/WINDFOR/stream) | Wind generation forecasts | `startTime`, `publishTime`, `generation` |
+WindScope is deployed using Vercel.
 
-For each target interval, the backend selects the most recently published forecast **at or before** the selected decision cutoff. Later forecasts are excluded to avoid look-ahead bias. The default **12:00 UTC** decision cutoff is a configurable scenario assumption, **not** a claim about the official market deadline.
+**Application URL:**
 
-Accuracy metrics use matched forecast and actual observations:
+https://windscope-o17u7fdo8-anish-kinkars-projects.vercel.app/
 
-- **MAE:** mean absolute value of `(forecast - actual)`.
-- **RMSE:** square root of the mean squared value of `(forecast - actual)`.
-- **Bias:** mean of `(forecast - actual)`; positive values indicate overforecasting.
+The application uses a React frontend and Python FastAPI backend, with deployment and routing configured for Vercel.
 
-The observed WINDFOR forecast series has hourly target timestamps, while FUELHH actuals are half-hourly. Metrics use matching timestamps only; missing forecasts are not treated as zero or fabricated. Connecting hourly forecast points on a chart is a visual presentation choice, not data imputation.
+The frontend requests analysis through the backend's `/api/analysis` endpoint.
 
-The analysis is limited to January 2026 decision dates and their next-day delivery intervals. Electricity demand, prices, and trading recommendations are outside scope.
-
-## Testing and production build
-
-Run backend tests:
-
-```bash
-python -m pytest tests/
-```
-
-Check the frontend production build:
-
-```bash
-npm run build
-```
-
-These commands describe how to run checks; they do not imply that every future deployment has been tested.
-
-## Deployment on Vercel
-
-The application uses Vercel for the React frontend and Python API. The repository contains `vercel.json` with build and routing configuration.
-
-To deploy:
-
-1. Import the public GitHub repository into Vercel.
-2. Set the project root to the application folder containing `package.json`, `api/`, and `vercel.json`.
-3. Use `npm run build` as the build command and `dist` as the output directory.
-4. Deploy and verify the frontend and `/api/health` and `/api/analysis` routes.
-5. Confirm public access using an incognito browser window.
-
-**Application:** https://windscope-o17u7fdo8-anish-kinkars-projects.vercel.app/
-
-**Example analysis request:**
+Example API request:
 
 ```text
 /api/analysis?day=2026-01-15&cutoff_hour=12
 ```
 
-## AI assistance disclosure
+The backend retrieves Elexon data, selects eligible historical forecasts, matches observations, and returns the resulting analysis.
 
-ChatGPT was used to assist with implementation, debugging, and documentation. AI-generated or synthetic energy measurements are not presented as genuine Elexon data.
+## 11. Testing
 
-## Limitations
+Backend tests can be executed using:
 
-This is a pilot decision-support application rather than a production electricity trading system. Its availability depends on the Elexon API and Vercel runtime. Historical forecast coverage may be lower than actual generation coverage because the datasets have different temporal resolutions.
+```bash
+python -m pytest tests/
+```
+
+The frontend production build can be checked using:
+
+```bash
+npm run build
+```
+
+These commands should be run before submitting changes or deploying a new version.
+
+## 12. Scope and Limitations
+
+- The analysis is restricted to purchasing decisions made in January 2026.
+- Only national-level wind generation data from Elexon is used.
+- Electricity demand, wholesale prices, and purchasing quantities are outside the project scope.
+- Actual generation is available at 30-minute intervals, while the observed forecast data contains hourly target timestamps.
+- Accuracy metrics are calculated using matched observations only.
+- Missing forecast values are not fabricated.
+- Data availability and API response times depend on Elexon's upstream service.
+- Historical decision cutoffs are configurable analytical assumptions.
+
+
+## 13. Project Links
+
+**Live Application:**  
+https://windscope-o17u7fdo8-anish-kinkars-projects.vercel.app/
+
+**Source Code:**  
+https://github.com/anish-kinkar/wind-7k30m
+
+**Data Provider:**  
+https://bmrs.elexon.co.uk/
+
+---
+
+WindScope is a pilot application demonstrating how historical renewable generation forecasts can be evaluated and presented through an accessible, data-driven decision-support interface.
